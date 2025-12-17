@@ -608,17 +608,11 @@ Item {
                     Layout.preferredHeight: 20
                     Layout.topMargin: -Theme.spacingS
                     Layout.bottomMargin: -Theme.spacingS
-                    text: {
-                        if (GreeterState.pamState === "error")
-                            return "Authentication error - try again";
-                        if (GreeterState.pamState === "fail")
-                            return "Incorrect password";
-                        return "";
-                    }
+                    text: GreeterState.pamMessage
                     color: Theme.error
                     font.pixelSize: Theme.fontSizeSmall
                     horizontalAlignment: Text.AlignHCenter
-                    opacity: GreeterState.pamState !== "" ? 1 : 0
+                    opacity: GreeterState.pamMessage === "" ? 0 : 1
 
                     Behavior on opacity {
                         NumberAnimation {
@@ -1162,34 +1156,37 @@ Item {
         enabled: isPrimaryScreen
 
         function onAuthMessage(message, error, responseRequired, echoResponse) {
-            if (responseRequired) {
+            if (responseRequired && !error) {
                 Greetd.respond(GreeterState.passwordBuffer);
                 GreeterState.passwordBuffer = "";
                 inputField.text = "";
-            } else if (!error) {
-                Greetd.respond("");
+            } else {
+                GreeterState.pamMessage = message;
+                placeholderDelay.restart();
             }
         }
 
         function onReadyToLaunch() {
             GreeterState.unlocking = true;
+            GreeterState.pamMessage = "";
             const sessionCmd = GreeterState.selectedSession || GreeterState.sessionExecs[GreeterState.currentSessionIndex];
             if (sessionCmd) {
                 GreetdMemory.setLastSessionId(GreeterState.sessionPaths[GreeterState.currentSessionIndex]);
                 GreetdMemory.setLastSuccessfulUser(GreeterState.username);
+                // quit after launch
                 Greetd.launch(sessionCmd.split(" "), ["XDG_SESSION_TYPE=wayland"]);
             }
         }
 
         function onAuthFailure(message) {
-            GreeterState.pamState = "fail";
+            GreeterState.pamMessage = "Authentication failed - check your credentials";
             GreeterState.passwordBuffer = "";
             inputField.text = "";
             placeholderDelay.restart();
         }
 
         function onError(error) {
-            GreeterState.pamState = "error";
+            GreeterState.pamMessage = "Authentication error - try again";
             placeholderDelay.restart();
         }
     }
@@ -1197,7 +1194,7 @@ Item {
     Timer {
         id: placeholderDelay
         interval: 4000
-        onTriggered: GreeterState.pamState = ""
+        onTriggered: GreeterState.pamMessage = ""
     }
 
     LockPowerMenu {

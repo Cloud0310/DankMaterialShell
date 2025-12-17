@@ -11,7 +11,7 @@ Singleton {
     property string usernameInput: ""
     property bool showPasswordInput: false
     property string selectedSession: ""
-    property string pamState: ""
+    property string pamMessage: ""
     property bool unlocking: false
 
     property var sessionList: []
@@ -24,6 +24,6 @@ Singleton {
         username = ""
         usernameInput = ""
         passwordBuffer = ""
-        pamState = ""
+        pamMessage = ""
     }
 }
